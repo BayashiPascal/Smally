@@ -7,72 +7,117 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "pberr.h"
+#include "pbmath.h"
 #include "gset.h"
 
 // ================= Define ==================
 
-#define SMALLY_DEFAULT_OP_MODE SmallyOpMode_LZ77
+#define SMALLYLZ77_DEFAULT_SIZELEN 12   // bits
+#define SMALLYLZ77_DEFAULT_SIZEPOS 4    // bits
 
 // ================= Data structures ===================
 
 // Operating mode
-typedef enum SmallyOpMode {
+typedef enum SmallyType {
 
-  SmallyOpMode_LZ77
+  SmallyType_LZ77
 
-} SmallyOpMode;
+} SmallyType;
 
-// Structure for the Feistel cipher
+// Structure for the Smally
 typedef struct Smally {
 
-  // Operating mode
-  SmallyOpMode mode;
+  // Type
+  SmallyType type;
 
 } Smally;
 
+// https://towardsdatascience.com/how-data-compression-works-
+// exploring-lz77-3a2c2e06c097
+
+// Structure for the SmallyLZ77
+typedef struct SmallyLZ77 {
+
+  // Parent
+  Smally parent;
+
+  // Size in bits of the search buffer
+  unsigned int nbBitSearchBuffer;
+
+  // Size in bits of the lookahead buffer
+  unsigned int nbBitLookAheadBuffer;
+
+  // Size in of the search buffer
+  unsigned int sizeSearchBuffer;
+
+  // Size in of the lookahead buffer
+  unsigned int sizeLookAheadBuffer;
+
+} SmallyLZ77;
+
 // ================ Functions declaration ====================
 
-// Static constructor for a Feistel cipher,
-// 'keys' is a GSet of null terminated strings, all the same size
-// 'fun' is the ciphering function of the form
-// void (*fun)(char* src, char* dest, char* key, unsigned long len)
-// 'src', 'dest' have same length 'len'
-// 'key' may be of any length
+// Static constructor for a Smally of type 'type'
 #if BUILDMODE != 0
 static inline
 #endif
-Smally SmallyCreateStatic(void);
+Smally SmallyCreateStatic(SmallyType type);
 
 // Function to free the memory used by the static Smally
-void SmallyFreeStatic(Smally* that);
+void _SmallyFreeStatic(Smally* that);
 
-// Get the operating mode of the Smally 'that'
+// Get the type of the Smally 'that'
 #if BUILDMODE != 0
 static inline
 #endif
-SmallyOpMode SmallyGetOpMode(const Smally* const that);
+SmallyType _SmallyGetType(const Smally* const that);
 
-// Set the operating mode of the Smally 'that' to 'mode'
+// Static constructor for a SmallyLZ77
 #if BUILDMODE != 0
 static inline
 #endif
-void SmallySetOpMode(
-  Smally* const that,
-   SmallyOpMode mode);
+SmallyLZ77 SmallyLZ77CreateStatic(void);
 
-// Function to compress a file 'fpIn' with the Smally 'that'
-// Save the result in the file 'fpOut'.
-void SmallyCompressFile(
-      Smally* that,
-  FILE* const fpIn,
-  FILE* const fpOut);
+// Function to free the memory used by the static SmallyLZ77
+void SmallyLZ77FreeStatic(SmallyLZ77* that);
 
-// Function to decompress a file 'fpIn' with the Smally 'that'
+// Get the nb of bits for the search buffer of the SmallyLZ77 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+unsigned int SmallyGetNbBitSearchBuffer(const SmallyLZ77* const that);
+
+// Get the nb of bits for the look ahead buffer of the SmallyLZ77 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+unsigned int SmallyGetNbBitLookAheadBuffer(const SmallyLZ77* const that);
+
+// Get the size of the search buffer of the SmallyLZ77 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+unsigned int SmallyGetSizeSearchBuffer(const SmallyLZ77* const that);
+
+// Get the size of the look ahead buffer of the SmallyLZ77 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+unsigned int SmallyGetSizeLookAheadBuffer(const SmallyLZ77* const that);
+
+// Function to compress a file 'fpIn' with the SmallyLZ77 'that'
 // Save the result in the file 'fpOut'.
-void SmallyDecompressFile(
-      Smally* that,
-  FILE* const fpIn,
-  FILE* const fpOut);
+void _SmallyLZ77CompressFile(
+  const SmallyLZ77* const that,
+              FILE* const fpIn,
+              FILE* const fpOut);
+
+// Function to decompress a file 'fpIn' with the SmallyLZ77 'that'
+// Save the result in the file 'fpOut'.
+void _SmallyLZ77DecompressFile(
+  const SmallyLZ77* const that,
+              FILE* const fpIn,
+              FILE* const fpOut);
 
 // ================ inliner ====================
 
@@ -81,3 +126,25 @@ void SmallyDecompressFile(
 #endif
 
 #endif
+
+// ================= Generic functions ==================
+
+#define SmallyGetType(S) _Generic(S, \
+  Smally*: _SmallyGetType, \
+  SmallyLZ77*: _SmallyGetType, \
+  default: PBErrInvalidPolymorphism)((const Smally*)S)
+
+#define SmallyFreeStatic(S) _Generic(S, \
+  Smally*: _SmallyFreeStatic, \
+  SmallyLZ77*: SmallyLZ77FreeStatic, \
+  default: PBErrInvalidPolymorphism)(S)
+
+#define SmallyCompressFile(S, I, O) _Generic(S, \
+  SmallyLZ77*: _SmallyLZ77CompressFile, \
+  const SmallyLZ77*: _SmallyLZ77CompressFile, \
+  default: PBErrInvalidPolymorphism)(S, I, O)
+
+#define SmallyDecompressFile(S, I, O) _Generic(S, \
+  SmallyLZ77*: _SmallyLZ77DecompressFile, \
+  const SmallyLZ77*: _SmallyLZ77DecompressFile, \
+  default: PBErrInvalidPolymorphism)(S, I, O)

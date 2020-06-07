@@ -2,35 +2,29 @@
 
 // ================ Functions implementation ====================
 
-// Static constructor for a Feistel cipher,
-// 'keys' is a GSet of null terminated strings, all the same size
-// 'fun' is the ciphering function of the form
-// void (*fun)(char* src, char* dest, char* key, unsigned long len)
-// 'src', 'dest' have same length 'len'
-// 'key' may be of any length
+// Static constructor for a Smally of type 'type'
 #if BUILDMODE != 0
 static inline
 #endif
-Smally SmallyCreateStatic(void) {
+Smally SmallyCreateStatic(SmallyType type) {
 
   // Declare a Smally and set the properties
-  Smally c = {
+  Smally s = {
 
-    .mode = SMALLY_DEFAULT_OP_MODE
+    .type = type
 
   };
 
   // Return the Smally
-  return c;
+  return s;
 
 }
 
-// Get the operating mode of the Smally 'that'
+// Get the type of the Smally 'that'
 #if BUILDMODE != 0
 static inline
 #endif
-SmallyOpMode SmallyGetOpMode(
-  const Smally* const that) {
+SmallyType _SmallyGetType(const Smally* const that) {
 
 #if BUILDMODE == 0
 
@@ -46,18 +40,45 @@ SmallyOpMode SmallyGetOpMode(
 
 #endif
 
-  // Return the operating mode
-  return that->mode;
+  // Return the type
+  return that->type;
 
 }
 
-// Set the operating mode of the Smally 'that' to 'mode'
+// Static constructor for a SmallyLZ77
 #if BUILDMODE != 0
 static inline
 #endif
-void SmallySetOpMode(
-  Smally* const that,
-   SmallyOpMode mode) {
+SmallyLZ77 SmallyLZ77CreateStatic(void) {
+
+  // Declare a Smally and set the properties
+  SmallyLZ77 s = {
+
+    .nbBitSearchBuffer = SMALLYLZ77_DEFAULT_SIZELEN,
+    .nbBitLookAheadBuffer = SMALLYLZ77_DEFAULT_SIZEPOS
+
+  };
+
+  s.parent = SmallyCreateStatic(SmallyType_LZ77);
+  s.sizeSearchBuffer =
+    powi(
+      2,
+      s.nbBitSearchBuffer);
+  s.sizeLookAheadBuffer =
+    powi(
+      2,
+      s.nbBitLookAheadBuffer);
+
+  // Return the Smally
+  return s;
+
+}
+
+// Get the nb of bits for the search buffer of the SmallyLZ77 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+unsigned int SmallyGetNbBitSearchBuffer(const SmallyLZ77* const that) {
 
 #if BUILDMODE == 0
 
@@ -73,7 +94,78 @@ void SmallySetOpMode(
 
 #endif
 
-  // Set the operating mode
-  that->mode = mode;
+  return that->nbBitSearchBuffer;
+
+}
+
+// Get the nb of bits for the look ahead buffer of the SmallyLZ77 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+unsigned int SmallyGetNbBitLookAheadBuffer(const SmallyLZ77* const that) {
+
+#if BUILDMODE == 0
+
+  if (that == NULL) {
+
+    SmallyErr->_type = PBErrTypeNullPointer;
+    sprintf(
+      SmallyErr->_msg,
+      "'that' is null");
+    PBErrCatch(SmallyErr);
+
+  }
+
+#endif
+
+  return that->nbBitLookAheadBuffer;
+
+}
+
+// Get the size of the search buffer of the SmallyLZ77 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+unsigned int SmallyGetSizeSearchBuffer(const SmallyLZ77* const that) {
+
+#if BUILDMODE == 0
+
+  if (that == NULL) {
+
+    SmallyErr->_type = PBErrTypeNullPointer;
+    sprintf(
+      SmallyErr->_msg,
+      "'that' is null");
+    PBErrCatch(SmallyErr);
+
+  }
+
+#endif
+
+  return that->sizeSearchBuffer;
+
+}
+
+// Get the size of the look ahead buffer of the SmallyLZ77 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+unsigned int SmallyGetSizeLookAheadBuffer(const SmallyLZ77* const that) {
+
+#if BUILDMODE == 0
+
+  if (that == NULL) {
+
+    SmallyErr->_type = PBErrTypeNullPointer;
+    sprintf(
+      SmallyErr->_msg,
+      "'that' is null");
+    PBErrCatch(SmallyErr);
+
+  }
+
+#endif
+
+  return that->sizeLookAheadBuffer;
 
 }

@@ -10,7 +10,7 @@ int main(
   // Declare variables to process arguments
   FILE* fpOut = NULL;
   FILE* fpIn = NULL;
-  SmallyOpMode opMode = SmallyOpMode_LZ77;
+  SmallyType opMode = SmallyType_LZ77;
 
   // Loop on arguments
   for (
@@ -100,20 +100,21 @@ int main(
 
         }
 
-        // Create the Smally
-        Smally smally = SmallyCreateStatic();
-        SmallySetOpMode(
-          &smally,
-          opMode);
+        if (opMode == SmallyType_LZ77) {
 
-        // Compress the file
-        SmallyCompressFile(
-          &smally,
-          fpIn,
-          fpOut);
+          // Create the Smally
+          SmallyLZ77 smally = SmallyLZ77CreateStatic();
 
-        // Free memory
-        SmallyFreeStatic(&smally);
+          // Compress the file
+          SmallyCompressFile(
+            &smally,
+            fpIn,
+            fpOut);
+
+          // Free memory
+          SmallyFreeStatic(&smally);
+
+        }
 
       }
 
@@ -158,20 +159,21 @@ int main(
 
         }
 
-        // Create the Smally
-        Smally smally = SmallyCreateStatic();
-        SmallySetOpMode(
-          &smally,
-          opMode);
+        if (opMode == SmallyType_LZ77) {
 
-        // Decompress the file
-        SmallyDecompressFile(
-          &smally,
-          fpIn,
-          fpOut);
+          // Create the Smally
+          SmallyLZ77 smally = SmallyLZ77CreateStatic();
 
-        // Free memory
-        SmallyFreeStatic(&smally);
+          // Decompress the file
+          SmallyDecompressFile(
+            &smally,
+            fpIn,
+            fpOut);
+
+          // Free memory
+          SmallyFreeStatic(&smally);
+
+        }
 
       }
 
@@ -183,7 +185,7 @@ int main(
       if (retStrCmp == 0) {
 
         // Memorize the operation mode
-        opMode = SmallyOpMode_LZ77;
+        opMode = SmallyType_LZ77;
 
       }
 
