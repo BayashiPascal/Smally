@@ -9,9 +9,11 @@
 // ================= Data structures ===================
 
 typedef struct SmallyLZ77Token {
+
   unsigned int offset;
   unsigned int length;
   unsigned char breakChar;
+
 } SmallyLZ77Token;
 
 // ================ Functions declaration ====================
@@ -19,8 +21,8 @@ typedef struct SmallyLZ77Token {
 // Function to search a token for the LZ77 algorithm
 SmallyLZ77Token SmallyLZ77SearchToken(
   const SmallyLZ77* const that,
-  const GSet* const searchSet,
-  const GSet* const lookAheadSet);
+        const GSet* const searchSet,
+        const GSet* const lookAheadSet);
 
 // ================ Functions implementation ==================
 
@@ -40,6 +42,8 @@ void _SmallyFreeStatic(Smally* that) {
   }
 
 #endif
+
+  (void)that;
 
 }
 
@@ -168,10 +172,12 @@ void _SmallyLZ77CompressFile(
 
     } else {
 
-      token = (SmallyLZ77Token){
+      token = (SmallyLZ77Token) {
+
         .length = 0,
         .offset = 0,
         .breakChar = *(unsigned char*)GSetHead(&lookAheadSet)
+
       };
 
     }
@@ -237,8 +243,8 @@ void _SmallyLZ77CompressFile(
 // Function to search a token for the LZ77 algorithm
 SmallyLZ77Token SmallyLZ77SearchToken(
   const SmallyLZ77* const that,
-  const GSet* const searchSet,
-  const GSet* const lookAheadSet) {
+        const GSet* const searchSet,
+        const GSet* const lookAheadSet) {
 
 #if BUILDMODE == 0
 
@@ -274,11 +280,15 @@ SmallyLZ77Token SmallyLZ77SearchToken(
 
 #endif
 
+  (void)that;
+
   // Create the result token
   SmallyLZ77Token bestToken = {
+
     .length = 0,
     .offset = 0,
     .breakChar = *(unsigned char*)GSetHead(lookAheadSet)
+
   };
 
   // Create an iterator for the look ahead buffer
@@ -301,16 +311,21 @@ SmallyLZ77Token SmallyLZ77SearchToken(
 
     // Create a temporary token
     SmallyLZ77Token token = {
+
       .length = 0,
       .offset = offset - 1,
       .breakChar = *(unsigned char*)GSetHead(lookAheadSet)
+
     };
 
     // Reset the iterator of the look ahead buffer
     GSetIterReset(&iterLookAhead);
 
     // Reset the iterator of the scan in the dictionnary
-    iterSearch = *(GSetIterForward*)(&iterStartSearch);
+    memcpy(
+      &iterSearch,
+      &iterStartSearch,
+      sizeof(GSetIterForward));
 
     // Scan the look ahead and dictionnary buffers until
     // we found a different byte
@@ -466,7 +481,12 @@ void _SmallyLZ77DecompressFile(
         GSetIterStep(&iterOffset);
 
     }
-    GSetIterForward iterLength = *(GSetIterForward*)(&iterOffset);
+
+    GSetIterForward iterLength;
+    memcpy(
+      &iterLength,
+      &iterOffset,
+      sizeof(GSetIterForward));
     for (
       unsigned int i = token.length;
       i--;) {
@@ -490,6 +510,7 @@ void _SmallyLZ77DecompressFile(
           PBErrCatch(SmallyErr);
 
         }
+
         GSetAppend(
           &searchSet,
           vals + c);
@@ -516,6 +537,7 @@ void _SmallyLZ77DecompressFile(
       PBErrCatch(SmallyErr);
 
     }
+
     GSetAppend(
       &searchSet,
       vals + token.breakChar);

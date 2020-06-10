@@ -30,7 +30,7 @@ int main(
       printf("                If not specified uses stdout\n");
       printf("[-compress <path>] : Encode the file at <path>\n");
       printf("[-decompress <path>] : Decode the file at <path>\n");
-      printf("[-lz77] : Use LZ77 cmopression\n");
+      printf("[-lz77] : Use LZ77 compression\n");
       printf("\n");
 
     // Else
