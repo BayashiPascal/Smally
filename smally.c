@@ -11,7 +11,7 @@
 typedef struct SmallyLZ77Token {
   unsigned int offset;
   unsigned int length;
-  char breakChar;
+  unsigned char breakChar;
 } SmallyLZ77Token;
 
 // ================ Functions declaration ====================
@@ -126,10 +126,11 @@ void _SmallyLZ77CompressFile(
   do {
 
     // Refill the look ahead buffer
-    while (!feof(fpIn) &&
-      GSetNbElem(&lookAheadSet) < SmallyGetSizeLookAheadBuffer(that)) {
+    while (
+      !feof(fpIn) &&
+      GSetNbElem(&lookAheadSet) < SmallyGetSizeLookAheadBuffer(that) - 1) {
 
-      char c;
+      unsigned char c;
       size_t ret =
         fread(
           &c,
@@ -170,19 +171,19 @@ void _SmallyLZ77CompressFile(
       token = (SmallyLZ77Token){
         .length = 0,
         .offset = 0,
-        .breakChar = *(char*)GSetHead(&lookAheadSet)
+        .breakChar = *(unsigned char*)GSetHead(&lookAheadSet)
       };
 
     }
 
     // Write the token (l, o, c) to the output file
-    char buffer[3];
+
+    unsigned char buffer[3];
     buffer[2] = token.breakChar;
-    buffer[1] = ((char*)(&(token.offset)))[sizeof(token.offset) - 1];
-    buffer[0] = ((char*)(&(token.offset)))[sizeof(token.offset) - 2];
-    buffer[0] |=
-      ((char*)(&(token.offset)))[sizeof(token.length) - 1] <<
-      (8 - SmallyGetNbBitLookAheadBuffer(that));
+    buffer[1] = token.offset & 0xFF;
+    buffer[0] = (token.offset & 0xFF00) >> 8;
+    buffer[0] |= token.length << (8 - SmallyGetNbBitLookAheadBuffer(that));
+
     size_t ret =
       fwrite(
         buffer,
@@ -202,8 +203,6 @@ void _SmallyLZ77CompressFile(
 
     }
 
-//printf("%d, %d, %c\n",token.offset,token.length,token.breakChar);
-
     // Slide the window
     // First, move the bytes from the look ahead buffer ot the search
     // buffer
@@ -219,7 +218,7 @@ void _SmallyLZ77CompressFile(
 
     // Second, pop from the search buffer as long as it exceeds its maximum
     // size
-    while (GSetNbElem(&searchSet) > SmallyGetSizeSearchBuffer(that)) {
+    while (GSetNbElem(&searchSet) >= SmallyGetSizeSearchBuffer(that)) {
 
       (void)GSetPop(&searchSet);
 
@@ -279,7 +278,7 @@ SmallyLZ77Token SmallyLZ77SearchToken(
   SmallyLZ77Token bestToken = {
     .length = 0,
     .offset = 0,
-    .breakChar = *(char*)GSetHead(lookAheadSet)
+    .breakChar = *(unsigned char*)GSetHead(lookAheadSet)
   };
 
   // Create an iterator for the look ahead buffer
@@ -303,8 +302,8 @@ SmallyLZ77Token SmallyLZ77SearchToken(
     // Create a temporary token
     SmallyLZ77Token token = {
       .length = 0,
-      .offset = offset,
-      .breakChar = *(char*)GSetHead(lookAheadSet)
+      .offset = offset - 1,
+      .breakChar = *(unsigned char*)GSetHead(lookAheadSet)
     };
 
     // Reset the iterator of the look ahead buffer
@@ -323,7 +322,9 @@ SmallyLZ77Token SmallyLZ77SearchToken(
       // are equals
       flagEqual =
         (GSetIterGet(&iterSearch) == GSetIterGet(&iterLookAhead));
-      if (flagEqual) {
+      if (
+        flagEqual &&
+        !GSetIterIsLast(&iterLookAhead)) {
 
         // Increase the length of the token
         ++(token.length);
@@ -331,7 +332,7 @@ SmallyLZ77Token SmallyLZ77SearchToken(
       // Else, if we have found the breaking byte
       } else {
 
-        token.breakChar = *(char*)GSetIterGet(&iterLookAhead);
+        token.breakChar = *(unsigned char*)GSetIterGet(&iterLookAhead);
 
       }
 
@@ -346,7 +347,7 @@ SmallyLZ77Token SmallyLZ77SearchToken(
 
       // The breaking byte is set to the current byte in the
       // look ahead buffer
-      token.breakChar = *(char*)GSetIterGet(&iterLookAhead);
+      token.breakChar = *(unsigned char*)GSetIterGet(&iterLookAhead);
 
     }
 
@@ -408,5 +409,148 @@ void _SmallyLZ77DecompressFile(
   }
 
 #endif
+
+  // Create a dictionary of all possible values to be used as data
+  // of the GSet
+  unsigned char vals[256];
+  for (
+    int i = 256;
+    i--;) {
+
+    vals[i] = i;
+
+  }
+
+  // Declare the search and look ahead buffers
+  GSet searchSet = GSetCreateStatic();
+
+  // Read the first token (l, o, c) from the input file
+  unsigned char buffer[3];
+  size_t ret =
+    fread(
+      buffer,
+      1,
+      3,
+      fpIn);
+  if (
+    ret != 3 &&
+    !feof(fpIn)) {
+
+    SmallyErr->_type = PBErrTypeIOError;
+    sprintf(
+      SmallyErr->_msg,
+      "I/O error %d",
+      ferror(fpIn));
+    PBErrCatch(SmallyErr);
+
+  }
+
+  // Loop on the file
+  do {
+
+    SmallyLZ77Token token;
+    token.breakChar = buffer[2];
+    token.offset = (unsigned int)buffer[1];
+    int shift = (8 - SmallyGetNbBitLookAheadBuffer(that));
+    token.length = (unsigned int)(buffer[0] >> shift);
+    buffer[0] = buffer[0] << SmallyGetNbBitLookAheadBuffer(that);
+    token.offset += 256 * (unsigned int)
+      (buffer[0] >> SmallyGetNbBitLookAheadBuffer(that));
+
+    // Decode the token
+    GSetIterBackward iterOffset = GSetIterBackwardCreateStatic(&searchSet);
+    for (
+      unsigned int i = token.offset;
+      i--;) {
+
+        GSetIterStep(&iterOffset);
+
+    }
+    GSetIterForward iterLength = *(GSetIterForward*)(&iterOffset);
+    for (
+      unsigned int i = token.length;
+      i--;) {
+
+        unsigned char c = *(unsigned char*)GSetIterGet(&iterLength);
+        ret =
+          fwrite(
+            &c,
+            1,
+            1,
+            fpOut);
+        if (
+          ret != 1 &&
+          !feof(fpOut)) {
+
+          SmallyErr->_type = PBErrTypeIOError;
+          sprintf(
+            SmallyErr->_msg,
+            "I/O error %d",
+            ferror(fpOut));
+          PBErrCatch(SmallyErr);
+
+        }
+        GSetAppend(
+          &searchSet,
+          vals + c);
+        GSetIterStep(&iterLength);
+
+    }
+
+    // Output the breaking byte
+    ret =
+      fwrite(
+        &(token.breakChar),
+        1,
+        1,
+        fpOut);
+    if (
+      ret != 1 &&
+      !feof(fpOut)) {
+
+      SmallyErr->_type = PBErrTypeIOError;
+      sprintf(
+        SmallyErr->_msg,
+        "I/O error %d",
+        ferror(fpOut));
+      PBErrCatch(SmallyErr);
+
+    }
+    GSetAppend(
+      &searchSet,
+      vals + token.breakChar);
+
+    // Pop from the search buffer as long as it exceeds its maximum
+    // size
+    while (GSetNbElem(&searchSet) >= SmallyGetSizeSearchBuffer(that)) {
+
+      (void)GSetPop(&searchSet);
+
+    }
+
+    // Read the next token
+    ret =
+      fread(
+        buffer,
+        1,
+        3,
+        fpIn);
+    if (
+      ret != 3 &&
+      !feof(fpIn)) {
+
+      SmallyErr->_type = PBErrTypeIOError;
+      sprintf(
+        SmallyErr->_msg,
+        "I/O error %d",
+        ferror(fpIn));
+      PBErrCatch(SmallyErr);
+
+    }
+
+  } while (!feof(fpIn));
+
+  // Free memory
+  GSetFlush(&searchSet);
 
 }

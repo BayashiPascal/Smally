@@ -14,9 +14,26 @@ void UnitTestSmallyLZ77() {
     fopen(
       "./testSmallyLZ77.sma",
       "w");
-  SmallyCompressFile(&smally, fpIn, fpOut);
-
+  SmallyCompressFile(
+    &smally,
+    fpIn,
+    fpOut);
   fclose(fpIn);
+  fclose(fpOut);
+  fpOut =
+    fopen(
+      "./testSmallyLZ77.sma",
+      "r");
+  FILE* fpBack =
+    fopen(
+      "./testSmallyLZ77.decomp.txt",
+      "w");
+  SmallyDecompressFile(
+    &smally,
+    fpOut,
+    fpBack);
+  fclose(fpOut);
+  fclose(fpBack);
   SmallyFreeStatic(&smally);
   printf("UnitTestSmallyLZ77 OK\n");
 
