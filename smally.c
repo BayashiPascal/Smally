@@ -121,6 +121,26 @@ void _SmallyLZ77CompressFile(
 
   }
 
+  // Create a progress bar
+  ProgBarTxt progBar = ProgBarTxtCreateStatic();
+
+  // Declare a variable to memorize the number of byte read
+  unsigned long nbByteRead = 0;
+
+  // Declare a variable to memorize the number of byte written
+  unsigned long nbByteWritten = 0;
+
+  // Get the size of the input file
+  fseek(
+    fpIn,
+    0,
+    SEEK_END);
+  unsigned long sizeFile = ftell(fpIn);
+  fseek(
+    fpIn,
+    0,
+    0);
+
   // Declare the search and look ahead buffers
   GSet searchSet = GSetCreateStatic();
   GSet lookAheadSet = GSetCreateStatic();
@@ -157,6 +177,21 @@ void _SmallyLZ77CompressFile(
         PBErrCatch(SmallyErr);
 
       }
+      ++nbByteRead;
+
+    }
+
+    // If we are in verbose mode
+    if (SmallyGetVerbose(that)) {
+
+      // Update and display the progress bar
+      ProgBarTxtSet(
+        &progBar,
+        (float)nbByteRead / (float)sizeFile);
+      printf(
+        "Compressing... %s\r",
+        ProgBarTxtGet(&progBar));
+      fflush(stdout);
 
     }
 
@@ -208,6 +243,7 @@ void _SmallyLZ77CompressFile(
       PBErrCatch(SmallyErr);
 
     }
+    nbByteWritten += 3;
 
     // Slide the window
     // First, move the bytes from the look ahead buffer ot the search
@@ -233,6 +269,23 @@ void _SmallyLZ77CompressFile(
   } while (
     !feof(fpIn) ||
     GSetNbElem(&lookAheadSet) > 0);
+
+  // If we are in verbose mode
+  if (SmallyGetVerbose(that)) {
+
+      // Update and display the progress bar
+      ProgBarTxtSet(
+        &progBar,
+        (float)nbByteRead / (float)sizeFile);
+      printf(
+        "Compressing... %s\n",
+        ProgBarTxtGet(&progBar));
+      fflush(stdout);
+    printf(
+      "Compressed file relative size: %.2f%%\n",
+      (float)nbByteWritten / (float)sizeFile * 100.0);
+
+  }
 
   // Free memory
   GSetFlush(&searchSet);
@@ -436,6 +489,23 @@ void _SmallyLZ77DecompressFile(
 
   }
 
+  // Create a progress bar
+  ProgBarTxt progBar = ProgBarTxtCreateStatic();
+
+  // Declare a variable to memorize the number of byte read
+  unsigned long nbByteRead = 0;
+
+  // Get the size of the input file
+  fseek(
+    fpIn,
+    0,
+    SEEK_END);
+  unsigned long sizeFile = ftell(fpIn);
+  fseek(
+    fpIn,
+    0,
+    0);
+
   // Declare the search and look ahead buffers
   GSet searchSet = GSetCreateStatic();
 
@@ -459,9 +529,24 @@ void _SmallyLZ77DecompressFile(
     PBErrCatch(SmallyErr);
 
   }
+  nbByteRead += 3;
 
   // Loop on the file
   do {
+
+    // If we are in verbose mode
+    if (SmallyGetVerbose(that)) {
+
+      // Update and display the progress bar
+      ProgBarTxtSet(
+        &progBar,
+        (float)nbByteRead / (float)sizeFile);
+      printf(
+        "Decompressing... %s\r",
+        ProgBarTxtGet(&progBar));
+      fflush(stdout);
+
+    }
 
     SmallyLZ77Token token;
     token.breakChar = buffer[2];
@@ -569,8 +654,23 @@ void _SmallyLZ77DecompressFile(
       PBErrCatch(SmallyErr);
 
     }
+    nbByteRead += 3;
 
   } while (!feof(fpIn));
+
+  // If we are in verbose mode
+  if (SmallyGetVerbose(that)) {
+
+      // Update and display the progress bar
+      ProgBarTxtSet(
+        &progBar,
+        (float)nbByteRead / (float)sizeFile);
+      printf(
+        "Decompressing... %s\n",
+        ProgBarTxtGet(&progBar));
+      fflush(stdout);
+
+  }
 
   // Free memory
   GSetFlush(&searchSet);

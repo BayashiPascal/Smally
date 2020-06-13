@@ -9,6 +9,7 @@
 #include "pberr.h"
 #include "pbmath.h"
 #include "gset.h"
+#include "respublish.h"
 
 // ================= Define ==================
 
@@ -29,6 +30,9 @@ typedef struct Smally {
 
   // Type
   SmallyType type;
+
+  // Verbose mode
+  bool verbose;
 
 } Smally;
 
@@ -71,6 +75,20 @@ void _SmallyFreeStatic(Smally* that);
 static inline
 #endif
 SmallyType _SmallyGetType(const Smally* const that);
+
+// Get the verbose mode of the Smally 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+bool _SmallyGetVerbose(const Smally* const that);
+
+// Set the verbose mode of the Smally 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+void _SmallySetVerbose(
+  Smally* const that,
+     const bool verbose);
 
 // Static constructor for a SmallyLZ77
 #if BUILDMODE != 0
@@ -132,7 +150,21 @@ void _SmallyLZ77DecompressFile(
 #define SmallyGetType(S) _Generic(S, \
   Smally*: _SmallyGetType, \
   SmallyLZ77*: _SmallyGetType, \
+  const Smally*: _SmallyGetType, \
+  const SmallyLZ77*: _SmallyGetType, \
   default: PBErrInvalidPolymorphism)((const Smally*)S)
+
+#define SmallyGetVerbose(S) _Generic(S, \
+  Smally*: _SmallyGetVerbose, \
+  SmallyLZ77*: _SmallyGetVerbose, \
+  const Smally*: _SmallyGetVerbose, \
+  const SmallyLZ77*: _SmallyGetVerbose, \
+  default: PBErrInvalidPolymorphism)((const Smally*)S)
+
+#define SmallySetVerbose(S, V) _Generic(S, \
+  Smally*: _SmallySetVerbose, \
+  SmallyLZ77*: _SmallySetVerbose, \
+  default: PBErrInvalidPolymorphism)((Smally*)S, V)
 
 #define SmallyFreeStatic(S) _Generic(S, \
   Smally*: _SmallyFreeStatic, \

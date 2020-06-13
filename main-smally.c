@@ -11,6 +11,7 @@ int main(
   FILE* fpOut = NULL;
   FILE* fpIn = NULL;
   SmallyType opMode = SmallyType_LZ77;
+  bool verbose = false;
 
   // Loop on arguments
   for (
@@ -31,6 +32,7 @@ int main(
       printf("[-compress <path>] : Encode the file at <path>\n");
       printf("[-decompress <path>] : Decode the file at <path>\n");
       printf("[-lz77] : Use LZ77 compression\n");
+      printf("[-verbose] : Display information message\n");
       printf("\n");
 
     // Else
@@ -105,6 +107,19 @@ int main(
           // Create the Smally
           SmallyLZ77 smally = SmallyLZ77CreateStatic();
 
+          // Set the verbose mode
+          SmallySetVerbose(
+            &smally,
+            verbose);
+
+          if (verbose) {
+
+            printf(
+              " - %s - \n",
+              argv[iArg + 1]);
+
+          }
+
           // Compress the file
           SmallyCompressFile(
             &smally,
@@ -164,6 +179,19 @@ int main(
           // Create the Smally
           SmallyLZ77 smally = SmallyLZ77CreateStatic();
 
+          // Set the verbose mode
+          SmallySetVerbose(
+            &smally,
+            verbose);
+
+          if (verbose) {
+
+            printf(
+              " - %s - \n",
+              argv[iArg + 1]);
+
+          }
+
           // Decompress the file
           SmallyDecompressFile(
             &smally,
@@ -186,6 +214,18 @@ int main(
 
         // Memorize the operation mode
         opMode = SmallyType_LZ77;
+
+      }
+
+      // If the argument is -verbose
+      retStrCmp =
+        strcmp(
+          argv[iArg],
+          "-verbose");
+      if (retStrCmp == 0) {
+
+        // Memorize the verbose mode
+        verbose = true;
 
       }
 

@@ -49,5 +49,5 @@ install:
 	cp smally ~/Tools/smally
 	
 testSmally:
-	smally -lz77 -out test.sma -compress main.c && smally -lz77 -out test.txt -decompress test.sma && diff main.c test.txt ; ls -l main.c test.sma && rm -f test.sma test.txt
+	smally -verbose -lz77 -out test.sma -compress main.c && smally -verbose -lz77 -out test.txt -decompress test.sma && diff main.c test.txt ; ls -l main.c test.sma && rm -f test.sma test.txt
 

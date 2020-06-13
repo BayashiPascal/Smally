@@ -11,7 +11,8 @@ Smally SmallyCreateStatic(SmallyType type) {
   // Declare a Smally and set the properties
   Smally s = {
 
-    .type = type
+    .type = type,
+    .verbose = false
 
   };
 
@@ -42,6 +43,58 @@ SmallyType _SmallyGetType(const Smally* const that) {
 
   // Return the type
   return that->type;
+
+}
+
+// Get the verbose mode of the Smally 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+bool _SmallyGetVerbose(const Smally* const that) {
+
+#if BUILDMODE == 0
+
+  if (that == NULL) {
+
+    SmallyErr->_type = PBErrTypeNullPointer;
+    sprintf(
+      SmallyErr->_msg,
+      "'that' is null");
+    PBErrCatch(SmallyErr);
+
+  }
+
+#endif
+
+  // Return the verbose mode
+  return that->verbose;
+
+}
+
+// Set the verbose mode of the Smally 'that'
+#if BUILDMODE != 0
+static inline
+#endif
+void _SmallySetVerbose(
+  Smally* const that,
+     const bool verbose) {
+
+#if BUILDMODE == 0
+
+  if (that == NULL) {
+
+    SmallyErr->_type = PBErrTypeNullPointer;
+    sprintf(
+      SmallyErr->_msg,
+      "'that' is null");
+    PBErrCatch(SmallyErr);
+
+  }
+
+#endif
+
+  // Set the verbose mode
+  that->verbose = verbose;
 
 }
 
